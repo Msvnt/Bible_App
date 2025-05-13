@@ -1,0 +1,272 @@
+// Código otimizado com melhorias visuais, compatibilidade e modo offline estilo Bible App
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, TextInput, ScrollView, Switch,
+  StyleSheet, Alert, SafeAreaView, Platform, StatusBar, TouchableOpacity, Modal
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BOOKS_WITH_CHAPTERS = {
+  "Gênesis": 50, "Êxodo": 40, "Levítico": 27, "Números": 36, "Deuteronômio": 34,
+  "Josué": 24, "Juízes": 21, "Rute": 4, "1 Samuel": 31, "2 Samuel": 24,
+  "1 Reis": 22, "2 Reis": 25, "1 Crônicas": 29, "2 Crônicas": 36, "Esdras": 10,
+  "Neemias": 13, "Ester": 10, "Jó": 42, "Salmos": 150, "Provérbios": 31,
+  "Eclesiastes": 12, "Cânticos": 8, "Isaías": 66, "Jeremias": 52, "Lamentações": 5,
+  "Ezequiel": 48, "Daniel": 12, "Oseias": 14, "Joel": 3, "Amós": 9,
+  "Obadias": 1, "Jonas": 4, "Miqueias": 7, "Naum": 3, "Habacuque": 3,
+  "Sofonias": 3, "Ageu": 2, "Zacarias": 14, "Malaquias": 4, "Mateus": 28,
+  "Marcos": 16, "Lucas": 24, "João": 21, "Atos": 28, "Romanos": 16,
+  "1 Coríntios": 16, "2 Coríntios": 13, "Gálatas": 6, "Efésios": 6, "Filipenses": 4,
+  "Colossenses": 4, "1 Tessalonicenses": 5, "2 Tessalonicenses": 3, "1 Timóteo": 6, "2 Timóteo": 4,
+  "Tito": 3, "Filemom": 1, "Hebreus": 13, "Tiago": 5, "1 Pedro": 5,
+  "2 Pedro": 3, "1 João": 5, "2 João": 1, "3 João": 1, "Judas": 1,
+  "Apocalipse": 22
+};
+
+const BOOKS = Object.keys(BOOKS_WITH_CHAPTERS);
+
+export default function App() {
+  const [dark, setDark] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [verses, setVerses] = useState([]);
+  const [offlineBible, setOfflineBible] = useState({});
+  const [weeklyPlan, setWeeklyPlan] = useState(Array(7).fill(""));
+  const [currentTab, setCurrentTab] = useState('bible');
+  const [bookModal, setBookModal] = useState(false);
+  const [chapterModal, setChapterModal] = useState(false);
+  const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+  const theme = {
+    bg: dark ? '#121212' : '#FFFFFF',
+    text: dark ? '#EDEDED' : '#1F2937',
+    card: dark ? '#1E1E1E' : '#F3F4F6',
+    border: dark ? '#333' : '#E5E7EB',
+    primary: '#4CAF50'
+  };
+
+  useEffect(() => {
+    loadFavorites();
+    loadOfflineBible();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const saved = await AsyncStorage.getItem("favorites");
+      if (saved) setFavorites(JSON.parse(saved));
+    } catch {
+      Alert.alert("Erro", "Não foi possível carregar os favoritos.");
+    }
+  };
+
+  const loadOfflineBible = async () => {
+    try {
+      const local = await AsyncStorage.getItem("offlineBible");
+      if (local) setOfflineBible(JSON.parse(local));
+      else fetchAndStoreBible();
+    } catch {
+      Alert.alert("Erro", "Falha ao carregar a Bíblia offline.");
+    }
+  };
+
+  const fetchAndStoreBible = async () => {
+    try {
+      let bibleData = {};
+      for (let book of BOOKS.slice(0, 5)) {
+        bibleData[book] = {};
+        for (let i = 1; i <= BOOKS_WITH_CHAPTERS[book]; i++) {
+          const res = await fetch(`https://bible-api.com/${encodeURIComponent(book + ' ' + i)}?translation=almeida`);
+          const data = await res.json();
+          bibleData[book][i] = data.verses || [];
+        }
+      }
+      await AsyncStorage.setItem("offlineBible", JSON.stringify(bibleData));
+      setOfflineBible(bibleData);
+    } catch {
+      Alert.alert("Erro", "Falha ao baixar a Bíblia para uso offline.");
+    }
+  };
+
+  const fetchVerses = () => {
+    if (offlineBible[selectedBook] && offlineBible[selectedBook][selectedChapter]) {
+      setVerses(offlineBible[selectedBook][selectedChapter]);
+    } else {
+      Alert.alert("Erro", "Capítulo não disponível offline.");
+    }
+  };
+
+  const saveFavorite = async (text) => {
+    try {
+      const saved = await AsyncStorage.getItem("favorites");
+      const parsed = saved ? JSON.parse(saved) : [];
+      const updated = [...parsed, text];
+      await AsyncStorage.setItem("favorites", JSON.stringify(updated));
+      setFavorites(updated);
+    } catch {
+      Alert.alert("Erro", "Não foi possível salvar o favorito.");
+    }
+  };
+
+  const handlePlanChange = (i, text) => {
+    const updated = [...weeklyPlan];
+    updated[i] = text;
+    setWeeklyPlan(updated);
+  };
+
+  const renderBible = () => (
+    <View style={[styles.card, { backgroundColor: theme.card }]}>      
+      <Text style={[styles.subtitle, { color: theme.text }]}>📖 Leitura da Bíblia</Text>
+
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TouchableOpacity onPress={() => setBookModal(true)} style={[styles.selectionButton, { backgroundColor: theme.primary }]}>
+          <Text style={{ color: '#fff', fontWeight: '600' }}>{selectedBook || 'Selecionar Livro'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => selectedBook && setChapterModal(true)} style={[styles.selectionButton, { backgroundColor: theme.primary }]}>
+          <Text style={{ color: '#fff', fontWeight: '600' }}>{selectedChapter ? `Capítulo ${selectedChapter}` : 'Selecionar Capítulo'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal visible={bookModal} animationType="slide">
+        <ScrollView contentContainerStyle={{ padding: 16 }}>
+          {BOOKS.map((book, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={() => {
+                setSelectedBook(book);
+                setSelectedChapter(null);
+                setVerses([]);
+                setBookModal(false);
+              }}
+              style={{ padding: 12, backgroundColor: selectedBook === book ? theme.primary : 'transparent' }}>
+              <Text style={{ color: '#000' }}>{book}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </Modal>
+
+      <Modal visible={chapterModal} animationType="slide">
+        <ScrollView contentContainerStyle={{ padding: 16 }}>
+          {selectedBook && [...Array(BOOKS_WITH_CHAPTERS[selectedBook])].map((_, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={() => {
+                setSelectedChapter(String(i + 1));
+                setChapterModal(false);
+                fetchVerses();
+              }}
+              style={{ padding: 12, backgroundColor: selectedChapter === String(i + 1) ? theme.primary : 'transparent' }}>
+              <Text style={{ color: '#000' }}>Capítulo {i + 1}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </Modal>
+
+      {verses.length > 0 && (
+        <View style={[styles.card, { backgroundColor: theme.card, marginTop: 20 }]}>  
+          <Text style={[styles.subtitle, { color: theme.text }]}>📘 {selectedBook} {selectedChapter}</Text>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            {verses.map((v, i) => (
+              <TouchableOpacity key={i} onLongPress={() => saveFavorite(`${v.book_name} ${v.chapter}:${v.verse} - ${v.text}`)}>
+                <Text style={{ color: theme.text, marginBottom: 6 }}>{v.verse}. {v.text}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderPlanner = () => (
+    <View style={[styles.card, { backgroundColor: theme.card }]}>      
+      <Text style={[styles.subtitle, { color: theme.text }]}>📅 Planejamento Semanal</Text>
+      {weeklyPlan.map((item, i) => (
+        <TextInput
+          key={i}
+          placeholder={days[i]}
+          value={item}
+          onChangeText={(text) => handlePlanChange(i, text)}
+          style={[styles.input, {
+            backgroundColor: '#eee',
+            color: theme.text,
+            borderColor: theme.border,
+            borderWidth: 1,
+            marginBottom: 6
+          }]}
+          placeholderTextColor={dark ? '#aaa' : '#888'}
+        />
+      ))}
+    </View>
+  );
+
+  const renderFavorites = () => (
+    <View style={[styles.card, { backgroundColor: theme.card }]}>      
+      <Text style={[styles.subtitle, { color: theme.text }]}>⭐ Favoritos</Text>
+      {favorites.length > 0 ? favorites.map((f, i) => (
+        <Text key={i} style={{ color: theme.text }}>• {f}</Text>
+      )) : <Text style={{ color: dark ? '#aaa' : '#666' }}>Nenhum versículo favoritado ainda.</Text>}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <Text style={[styles.title, { color: theme.text }]}>📖 Vida com Propósito</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>          
+          <View style={styles.row}>
+            <Text style={{ color: theme.text }}>Modo Escuro</Text>
+            <Switch value={dark} onValueChange={() => setDark(!dark)} />
+          </View>
+        </View>
+
+        {currentTab === 'bible' && renderBible()}
+        {currentTab === 'planner' && renderPlanner()}
+        {currentTab === 'favorites' && renderFavorites()}
+      </ScrollView>
+
+      <View style={[styles.navbar, { backgroundColor: theme.card, borderColor: theme.border }]}>        
+        {['bible', 'planner', 'favorites'].map((tab) => (
+          <TouchableOpacity key={tab} onPress={() => setCurrentTab(tab)} style={styles.navButton}>
+            <Text style={{ color: currentTab === tab ? theme.primary : '#888' }}>{tab.toUpperCase()}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  subtitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  input: { padding: 10, borderRadius: 6 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  card: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3
+  },
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+    borderTopWidth: 1
+  },
+  navButton: { padding: 8 },
+  selectionButton: {
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+    flex: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2
+  }
+});
