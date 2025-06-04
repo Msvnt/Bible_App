@@ -14,7 +14,8 @@
     "react-native": "0.79.2",
     "@expo/vector-icons": "^14.1.0",
     "react-native-paper": "4.9.2",
-    "@react-native-async-storage/async-storage": "2.1.2"
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-navigation/native": "*"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

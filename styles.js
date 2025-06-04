@@ -1,20 +1,42 @@
 import { StyleSheet } from 'react-native';
+
 export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
   },
-  subtitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    marginBottom: 10 
+  subtitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
-  input: { 
-    padding: 10, 
-    borderRadius: 6,
-    minHeight: 50,
+  input: {
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    color: '#333',
+  },
+  button: {
+    backgroundColor: '#007bff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   row: {
     flexDirection: 'row',
@@ -38,8 +60,8 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
   },
-  navButton: { 
-    padding: 8 
+  navButton: {
+    padding: 8,
   },
   selectionButton: {
     padding: 12,
@@ -87,6 +109,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
+    width: '100%', // Adiciona esta linha para garantir que ocupe a largura total
   },
   settingsOptionText: {
     fontSize: 16,
@@ -101,5 +124,6 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
+    textAlign: 'left', // Adiciona esta linha para alinhar o texto à esquerda
   },
 });

@@ -55,7 +55,7 @@ function PlanScreen({ theme, dark }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
       <Text style={[styles.subtitle, { color: theme.text }]}>
-        📅 Planejamento Semanal
+        📅  PLANEJAMENTO SEMANAL
       </Text>
       {weeklyPlan.map((item, i) => (
         <View key={DAYS[i]} style={{ marginBottom: 10 }}>

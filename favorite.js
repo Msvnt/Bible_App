@@ -93,7 +93,7 @@ function FavoritesScreen({
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
-      <Text style={[styles.subtitle, { color: theme.text, fontSize: fontSizeMap[fontSize] }]}>⭐ Favoritos</Text>
+      <Text style={[styles.subtitle, { color: theme.text, fontSize: fontSizeMap[fontSize] }]}>⭐ FAVORITOS</Text>
       {favorites.length > 0 ? (
         <FlatList
           data={favorites}
